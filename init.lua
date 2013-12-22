@@ -5,6 +5,8 @@ honeypots = {
 	},
 	actives = {
 	},
+	digged = {
+	},
 }
 
 local function setpts(cnt, name)
@@ -41,11 +43,27 @@ local function ondig(p, node, digger)
 			local priv, missing = minetest.check_player_privs(name, {honeypot=true})
 			if priv==false then
 				addpts(1, name)
+				honeypots.digged[#honeypots.digged + 1] = {name = name, pos = {x=p.x, y=p.y, z=p.z}, nname = node.name}
 			end
 		end
 	end
 end
 minetest.register_on_dignode(ondig)
+
+local function onplace(p, node, placer)
+	local name = placer:get_player_name()
+	for i=1, #honeypots.digged do
+		local hpt = honeypots.digged[i]
+		if hpt.name == name and node.name == hpt.nname and vector.equals(hpt.pos, p) then
+			local priv, missing = minetest.check_player_privs(name, {honeypot=true})
+			if priv==false then
+				addpts(-1, name)
+			end
+			table.remove(honeypots.digged, i)
+		end
+	end
+end
+minetest.register_on_placenode(onplace)
 
 local function split(inputstr, sep)
 	if sep == nil then
@@ -161,6 +179,7 @@ local loadSettingsFromFile = function()
 		if table~=nil then
 			honeypots = table
 		end
+		honeypots.digged = {}
 		print("loaded honeypots")
 	end
 end
@@ -169,6 +188,7 @@ local saveSettingsToFile = function()
 	local worldpath = minetest.get_worldpath()
 	io.output(worldpath.."/honeypots.txt")
 	io.write(minetest.serialize(honeypots))
+	honeypots.digged = {}
 	print("saved honeypots")
 end
 
