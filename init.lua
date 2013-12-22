@@ -13,7 +13,7 @@ local function setpts(cnt, name)
 	if cnt > 10 then
 		minetest.after(math.random(300, 600), function()
 			minetest.ban_player(name)
-		end
+		end)
 	end
 end
 
